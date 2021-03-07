@@ -56,6 +56,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -160,13 +161,21 @@ public abstract class DashboardFragment extends SettingsPreferenceFragment
     }
 
     @Override
-    public void onCategoriesChanged() {
-        final DashboardCategory category =
-                mDashboardFeatureProvider.getTilesForCategory(getCategoryKey());
-        if (category == null) {
+    public void onCategoriesChanged(Set<String> categories) {
+        final String categoryKey = getCategoryKey();
+        final DashboardCategory dashboardCategory =
+                mDashboardFeatureProvider.getTilesForCategory(categoryKey);
+        if (dashboardCategory == null) {
             return;
         }
-        refreshDashboardTiles(getLogTag());
+
+        if (categories == null) {
+            // force refreshing
+            refreshDashboardTiles(getLogTag());
+        } else if (categories.contains(categoryKey)) {
+            Log.i(TAG, "refresh tiles for " + categoryKey);
+            refreshDashboardTiles(getLogTag());
+        }
     }
 
     @Override
@@ -435,6 +444,7 @@ public abstract class DashboardFragment extends SettingsPreferenceFragment
         }
 
         updatePreferenceVisibility(mPreferenceControllers);
+        updateCategoryVisibility();
     }
 
     @VisibleForTesting
@@ -457,6 +467,10 @@ public abstract class DashboardFragment extends SettingsPreferenceFragment
             }
         }
     }
+
+    // declaring abstract would be better but requires too many classes to be modified, so just
+    // make it public and don't do anything in the default case
+    public void updateCategoryVisibility() { }
 
     /**
      * Refresh preference items backed by DashboardCategory.
